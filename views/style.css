@@ -1,0 +1,97 @@
+
+body {
+    padding: 0;
+    margin: 0;
+}
+
+h1 {
+    font-family: 'Montserrat', sans-serif;
+    color: white;
+    font-weight:bold;
+    font-style:normal;
+    background-color: #c60c30;
+    margin: 0;
+    padding: 10;
+    
+}
+
+ul {
+    list-style-type: none;
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+    background-color: #333;
+}
+
+div.sticky {
+    position: sticky;
+    top: 0;
+}
+
+input[type=button] {
+    display: inline;
+    float: left;
+    background-color: #c60c30;
+    border: none;
+    padding: 10px 25px;
+    cursor: pointer; 
+    font-family: 'Montserrat', sans-serif;
+    color: white;
+    font-weight:bold;
+    font-style:normal; 
+}
+
+input:hover[type=button] {
+    background-color: #770B21;
+}
+
+input[type=text] {
+    display: inline;
+    float: left;
+    background-color: black;
+    border: none;
+    color: white;
+    padding: 10px;
+}
+
+li {
+    float: left;
+}
+
+li a {
+    background-color: #333;
+    display: block;
+    padding: 8px;
+    text-decoration: none;
+    font-family: 'Montserrat', sans-serif;
+    color: white;
+    font-weight:bold;
+    font-style:normal;
+}
+
+li a:hover {
+    background-color: #111;
+}
+
+.norm { /*normal, non all-caps text*/
+    font-family: 'Roboto', sans-serif;
+    color: black;
+    font-weight:normal;
+    font-style:normal;
+    margin-left:20;
+}
+
+p {
+    font-family: 'Roboto Mono', sans-serif;
+    color: black;
+    font-weight:normal;
+    font-style:normal;
+    text-transform: uppercase;
+    margin-left:20;
+}
+
+.mainPage {  /*this is just to prevent text and nav menu from overlaping*/
+    width: 80%;
+    padding-top:20px;
+}
+

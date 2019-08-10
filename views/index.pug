@@ -1,0 +1,121 @@
+html
+head
+    title= title 
+    link(rel='stylesheet', href='https://fonts.googleapis.com/css?family=Montserrat|Roboto+Mono|Roboto')
+    style
+        include style.css
+body
+
+    h1 METAR READER
+    .sticky
+        ul
+            -var airport = '';
+            input(type="text" id="icao" maxlength=4 placeholder="Enter an ICAO code" onchange="airport = document.getElementById('icao').value;")
+            input(type='button' value="GO" id="goIcao" onclick="location.replace('http://localhost:4000/metar/'+airport);")
+            script.  
+                var box = document.getElementById("icao");
+                box.addEventListener("keyup", function(event) {
+                    if (event.keyCode === 13) {
+                        event.preventDefault();
+                        document.getElementById("goIcao").click();
+                    }
+                });
+            li
+                a(href='http://localhost:4000/') HOME
+            li
+                a(href='http://localhost:4000/howto') GUIDE
+
+    .mainpage
+        - var temp= homeMessage;
+        .norm !{temp}
+
+        - var temp= metarMessage;
+        p !{temp}
+        - var temp= cloudMessage;
+        p !{temp}
+        - var temp= weatherMessage;
+        p !{temp}
+        - var temp= tafMessage;
+        p !{temp}
+        - var temp= infoMessage;
+        p !{temp}
+        - var temp= runwayMessage;
+        p !{temp}
+        - var temp= rawMessage;
+        p !{temp}
+
+    p
+        | some text for scroll testing
+        br
+        | some text
+        br
+        | some text
+        br
+        | some text
+        br
+        | some text
+        br
+        | some text
+        br
+        | some text
+        br
+        | some text
+        br
+        | some text
+        br
+        | some text
+        br
+        | some text
+        br
+        | some text
+        br
+        | some text
+        br
+        | some text
+        br
+        | some text
+        br
+        | some text
+        br
+        | some text
+        br
+        | some text
+        br
+        | some text
+        br
+        | some text
+        br
+        | some text
+        br
+        | some text
+        br
+        | some text
+        br
+        | some text
+        br
+        | some text
+        br
+        | some text
+        br
+        | some text
+        br
+        | some text
+        br
+        | some text
+        br
+        | some text
+        br
+        | some text
+        br
+        | some text
+        br
+        | some text
+        br
+        | some text
+        br
+        | some text
+        br
+        | some text
+        br
+
+
