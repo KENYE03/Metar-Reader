@@ -6,8 +6,7 @@ app.set("view engine", "pug");
 
 //note that if slow, the API has been having trouble getting the TAFs as they are implemented some changes I think.
 //AVWX REST API
-//get Auth token before Nov. 1
-//daily rate limit for avwx will be assinged Dec. 1, enformced by Jan. 1
+//get Auth token set up before Nov. 1
 
 
 function numberToMonth (number) {
@@ -79,7 +78,7 @@ function middleware2 (req, res, next) { //please keep in mind that a function na
         +"<br/><br/>All altitues are given in AGL, all degrees are in degrees true" });
 }
 
-app.get("/howto", middleware4, middleware3);
+app.get("/howto", middleware3);
 function middleware3 (req, res, next) {
     res.render ("index", {homeMessage : "something on how to read a Metar and Taf" });
 }
@@ -123,7 +122,6 @@ function middleware1 (req, res) {
                 }
                 
                 for(;splitMet[i].includes("0") == false  && splitMet[i].includes("CLR") == false && splitMet[i].includes("SKC") == false;i++) { // if any of these are true, that means we are on the cloud section now, and there is no predominant weather section
-                    console.log (splitMet[i]);
                     if (splitMet[i].includes ("+")) {
                         preWeather = preWeather.concat("heavy ");
                     }
@@ -212,7 +210,6 @@ function middleware1 (req, res) {
                 
 
                 while (splitMet[i].includes("/") == false) {
-                    console.log(i);
                     clouds = clouds.concat("- "+splitMet[i][0], splitMet[i][1], splitMet[i][2]," at ", splitMet[i][3], splitMet[i][4], splitMet[i][5],"00 feet,<br />");
                     if (splitMet[i].includes("VV")) { //removing the clouds section if there is low lying obstructions
                         clouds = "Sky obscured by surface layer. <br/> Vertical visbility: "+splitMet[i][2]+splitMet[i][3]+splitMet[i][4]+"00 ft AGL.<br/>";
@@ -274,7 +271,8 @@ function middleware1 (req, res) {
             }
             var k =  tafReadings.remarks.length; //finding the end of the remarks to get the next transmission time.
             if (req.params.airport[0] == "C") {
-                tafReport = tafReport.concat("Next report at " + tafReadings.remarks[k-5] + tafReadings.remarks[k-4] + tafReadings.remarks[k-3] + tafReadings.remarks[k-2] + " hours zulu.<br/>");
+                tafReport = tafReport.concat("Next report at " + tafReadings.remarks[k-5] + tafReadings.remarks[k-4] + tafReadings.remarks[k-3] + tafReadings.remarks[k-2] + " hours zulu.");
+                tafReport = tafReport.concat(".<br/>");
             } 
             
             
@@ -283,7 +281,7 @@ function middleware1 (req, res) {
                 var airInfo = JSON.parse(air_body);
                 request('http://api.apixu.com/v1/current.json?key=5791c6742b044b8887a185604192906&q=' + airInfo.city, function (city_error, city_respose, city_body) {//using airport city to get local time info for that airport w/ weather api
                     var cityInfo = JSON.parse(city_body);
-                    var loc_Time = (cityInfo.location.localtime[11]+cityInfo.location.localtime[12]+cityInfo.location.localtime[14]+cityInfo.location.localtime[15]);
+                    var loc_Time = (cityInfo.location.localtime.substr(11, 5));
                     var loc_Date = (cityInfo.location.localtime.substr(0, 10));//local date and time
 
                     //runway information
