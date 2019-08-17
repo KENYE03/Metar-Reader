@@ -7,6 +7,7 @@ app.set("view engine", "pug");
 //AVWX REST API
 //get Auth token set up before Nov. 1
 //get "the station has # runways" s fixed
+//swtiched from city name based loccation info to coordinate based info, switched from apixu api to GeoNames api
 
 
 function numberToMonth (n) {
@@ -23,7 +24,7 @@ function cloudDecode (code) {
     if (code == "FEW") {
         return "Few clouds"
     }
-    if (code == "SCT") {n
+    if (code == "SCT") {
         return "Scattered clouds"
     }
     if (code == "BKN") {
@@ -57,7 +58,10 @@ app.get("/metar/:airport", middleware1);
 function middleware1 (req, res) {
     request ("https://avwx.rest/api/metar/"+req.params.airport+"?options=&format=json&onfail=cache", function (met_error, met_response, met_body) { //first request for getting metar info
         var readings = JSON.parse(met_body);
+        
         //decoding the Metar\
+
+
         var transDate = (readings.time.dt.substr(0, 4) +"-"+ numberToMonth(readings.time.dt.substr(5, 2)) +"-"+ readings.time.dt.substr(8, 2)); 
         var transTime = (readings.time.dt.substr(11, 5));
 
@@ -72,7 +76,7 @@ function middleware1 (req, res) {
                 }
                 i++
                 var windVar = "";
-                if (splitMet[i+1].includes("V")){ //checking for variations in wind direction, windVar is a string that will be outputted every time, but it will be blank if theres no variations
+                if (splitMet[i+1].includes("V") && splitMet[i+1].includes("VC") == false){ //checking for variations in wind direction, V could mean variations, but could also be VC meaning weather in the vicinity, so check for both
                     windVar = "<br/>with variations in direction between " + splitMet[i+1][0] + splitMet[i+1][1] +splitMet[i+1][2]+" and "+ splitMet[i+1][4] + splitMet[i+1][5] +splitMet[i+1][6]+" degrees";
                 }
                 if (windDir == "VRB") { //checking for low wind resulting in variable direction.
@@ -107,6 +111,9 @@ function middleware1 (req, res) {
                     }
                     if (splitMet[i].includes ("TI")) {
                         preWeather = preWeather.concat("thin ");
+                    }
+                    if (splitMet[i].includes ("VC")) {
+                        preWeather = preWeather.concat("nearby ");
                     }
                     if (splitMet[i].includes ("SH")) {
                         preWeather = preWeather.concat("showers<br/> ");
@@ -233,10 +240,11 @@ function middleware1 (req, res) {
             
             request ("https://avwx.rest/api/station/"+req.params.airport+"?format=json",function (air_error, air_response, air_body) { //nested request for getting airport info
                 var airInfo = JSON.parse(air_body);
-                request('http://api.apixu.com/v1/current.json?key=5791c6742b044b8887a185604192906&q=' + airInfo.city, function (city_error, city_respose, city_body) {//using airport city to get local time info for that airport w/ weather api
-                    var cityInfo = JSON.parse(city_body);
-                    var loc_Time = (cityInfo.location.localtime.substr(11, 5));
-                    var loc_Date = (cityInfo.location.localtime.substr(0, 10));//local date and time
+                request('http://api.geonames.org/timezoneJSON?lat='+airInfo.latitude+'&lng='+airInfo.longitude+'&username=type_kenye_03', function (city_error, city_respose, city_body) {//using airport city to get local time info for that airport w/ weather api
+                    console.log ('http://api.geonames.org/timezoneJSON?lat='+airInfo.latitude+'&lng='+airInfo.longitude+'-73.77890015&username=type_kenye_03');
+                    var loc_Info = JSON.parse(city_body);
+                    var loc_Time = (loc_Info.time.substr(11, 5));
+                    var loc_Date = (loc_Info.time.substr(0, 10));//local date and time
 
                     //runway information
                     var runwayInfo = "";
@@ -262,7 +270,7 @@ function middleware1 (req, res) {
                         tafMessage : "<h3>TAF</h3><p>"+tafReport+"</p>", //no idea how im going to deal with this  
                         infoMessage : 
                             "<h3>Station Information</h3><p>"
-                            + airInfo.name + "<br/>" + cityInfo.location.name +", " + cityInfo.location.region + ", " + cityInfo.location.country +"<br/>"
+                            + airInfo.name + "<br/>" + airInfo.city +", " + loc_Info.countryName + "<br/>"
                             +"Current local time is " +loc_Time+ " hours, "+ loc_Date +"</p>",
                         runwayMessage : runwayInfo, 
                         rawMessage : 
