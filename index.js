@@ -4,64 +4,32 @@ const app = express();
 app.set("view engine", "pug");
 
 
-//note that if slow, the API has been having trouble getting the TAFs as they are implemented some changes I think.
 //AVWX REST API
 //get Auth token set up before Nov. 1
+//get "the station has # runways" s fixed
 
 
-function numberToMonth (number) {
-    if (number == "01") {
-        return "Jan"
-    }
-    if (number == "02") {
-        return "Feb"
-    }
-    if (number == "03") {
-        return "Mar"
-    }
-    if (number == "04") {
-        return "Apr"
-    }
-    if (number == "05") {
-        return "May"
-    }
-    if (number == "06") {
-        return "Jun"
-    }
-    if (number == "07") {
-        return "Jul"
-    }
-    if (number == "08") {
-        return "Aug"
-    }
-    if (number == "09") {
-        return "Sep"
-    }
-    if (number == "10") {
-        return "Oct"
-    }
-    if (number == "11") {
-        return "Nov"
-    }
-    if (number == "12") {
-        return "Dec"
-    }
+function numberToMonth (n) {
+        return ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul","Aug", "Sep", "Oct", "Nov", "Dec"][parseInt(n, 10) + 1];
 }
 
 function cloudDecode (code) {
-    if (number == "CLR") {
-        return "Clear Skies"
+    if (code == "CLR") { //CLR and SKC means that there are no clouds
+        return "CLR"
     }
-    if (number == "FEW") {
-        return "Few"
+    if (code == "SKC") {
+        return "SKC" //no change if CLR or SKC since we will be replacing the clouds message if the skies are clear
     }
-    if (number == "SCT") {
-        return "Scattered"
+    if (code == "FEW") {
+        return "Few clouds"
     }
-    if (number == "BKN") {
-        return "Broken"
+    if (code == "SCT") {n
+        return "Scattered clouds"
     }
-    if (number == "OVC") {
+    if (code == "BKN") {
+        return "Broken clouds"
+    }
+    if (code == "OVC") {
         return "Overcast"
     }
 }
@@ -100,8 +68,7 @@ function middleware1 (req, res) {
                 var windDir = (""+splitMet[i][0]+ splitMet[i][1]+ splitMet[i][2]+" degrees") //setting wind speed and direaction by connecting elemetns of the string together.
                 var windSpeed = (""+splitMet[i][3]+ splitMet[i][4]+"")
                 if (splitMet[i].includes("G")){ //checking for gusts
-                    var gusting = true;
-                    var gustSpeed = (""+ splitMet[i][6] + splitMet[i][6] +"")
+                    var windSpeed = windSpeed.concat(" knots, gusting to "+ splitMet[i][6] + splitMet[i][6] +"")
                 }
                 i++
                 var windVar = "";
@@ -113,6 +80,7 @@ function middleware1 (req, res) {
                 }
             }
 
+            //=============PREDOMINANT WEATHER=============
             if (splitMet[i].includes("SM")){//using visibility section to find where the cloud and predominant weather section are
                 i++;
                 var preWeather = ""
@@ -202,15 +170,10 @@ function middleware1 (req, res) {
                     }
                 }
                 
+                //=============CLOUDS=============
                 var clouds = "";
-                if (splitMet[i].includes("/") == false) { //looking for clouds
-                    clouds = "Clouds are as follows:<br/>"
-                }
-                
-                
-
-                while (splitMet[i].includes("/") == false) {
-                    clouds = clouds.concat("- "+splitMet[i][0], splitMet[i][1], splitMet[i][2]," at ", splitMet[i][3], splitMet[i][4], splitMet[i][5],"00 feet,<br />");
+                while (splitMet[i].includes("/") == false) {//looking for clouds by stopping before the temp/dew section, which will always contain "/"
+                    clouds = clouds.concat("" + cloudDecode(splitMet[i][0] + splitMet[i][1] + splitMet[i][2]) + " at " + splitMet[i][3] + splitMet[i][4] + splitMet[i][5],"00 feet,<br />");
                     if (splitMet[i].includes("VV")) { //removing the clouds section if there is low lying obstructions
                         clouds = "Sky obscured by surface layer. <br/> Vertical visbility: "+splitMet[i][2]+splitMet[i][3]+splitMet[i][4]+"00 ft AGL.<br/>";
                         i++;
@@ -219,7 +182,7 @@ function middleware1 (req, res) {
                     i++;   
                 }
 
-                if (clouds.includes("CLR")) { //removing the clouds section if there is no clouds/
+                if (clouds.includes("CLR")||clouds.includes("SKC")) { //removing the clouds section if there is no clouds, some airports, such as CYYZ, use SKC instead of CLR
                     clouds = "Skies are currently clear of clouds.<br/>";
                 }
 
@@ -251,7 +214,7 @@ function middleware1 (req, res) {
                 
             }
             
-            tafReport = tafReport.concat("Latest TAF from " +req.params.airport+ ", transmitted at "+tafTime+" on "+ tafDate + "<br/>");
+            tafReport = tafReport.concat("Latest TAF from " +req.params.airport+ ", transmitted at "+tafTime+" on "+ tafDate + "<br/><br/>");
             for (var i = 0; i<reportCount;i++) {
                 tafReport = tafReport.concat("From "+tafReadings.forecast[i].start_time.dt[0]+tafReadings.forecast[i].start_time.dt[1]+tafReadings.forecast[i].start_time.dt[2]+tafReadings.forecast[i].start_time.dt[3]+"-"); //concat current year
                 tafReport = tafReport.concat(numberToMonth(tafReadings.forecast[i].start_time.dt[5]+tafReadings.forecast[i].start_time.dt[6])+"-"+tafReadings.forecast[i].start_time.repr[0]+tafReadings.forecast[i].start_time.repr[1]); //concat current month and validity day
@@ -259,20 +222,11 @@ function middleware1 (req, res) {
                 tafReport = tafReport.concat(tafReadings.forecast[i].end_time.dt[0]+tafReadings.forecast[i].end_time.dt[1]+tafReadings.forecast[i].end_time.dt[2]+tafReadings.forecast[i].end_time.dt[3]+"-"); //same thing but for end time
                 tafReport = tafReport.concat(numberToMonth(tafReadings.forecast[i].end_time.dt[5]+tafReadings.forecast[i].end_time.dt[6])+"-"+tafReadings.forecast[i].end_time.repr[0]+tafReadings.forecast[i].end_time.repr[1]); 
                 tafReport = tafReport.concat(" at "+tafReadings.forecast[i].end_time.repr[2]+tafReadings.forecast[i].end_time.repr[3]+"00 hours:<br/>");
-                // for (var j = 0; j < tafReadings.forecast[i].clouds.length; j++) { // getting clouds
-                //     tafReport = tafReport.concat(tafReadings.forecast[i].clouds[j].type + " at " + tafReadings.forecast[i].clouds[j].altitude + "00 ft. <br/>");
-                // } 
-                // if (tafReadings.forecast[i].visibility.repr == "P6") { // getting visbility
-                //     tafReport = tafReport.concat("Visbility is greater than 6 stat. miles.");
-                // } else {
-                //     tafReport = tafReport.concat("Visbility is "+tafReadings.forecast[i].visibility.repr +" stat. miles.");
-                // }
-                tafReport = tafReport.concat("- "+tafReadings.forecast[i].summary+"<br/>");
+                tafReport = tafReport.concat(""+tafReadings.forecast[i].summary+"<br/><br/>");
             }
             var k =  tafReadings.remarks.length; //finding the end of the remarks to get the next transmission time.
             if (req.params.airport[0] == "C") {
-                tafReport = tafReport.concat("Next report at " + tafReadings.remarks[k-5] + tafReadings.remarks[k-4] + tafReadings.remarks[k-3] + tafReadings.remarks[k-2] + " hours zulu.");
-                tafReport = tafReport.concat(".<br/>");
+                tafReport = tafReport.concat("Next report at " + tafReadings.remarks[k-5] + tafReadings.remarks[k-4] + tafReadings.remarks[k-3] + tafReadings.remarks[k-2] + " hours zulu");
             } 
             
             
@@ -293,34 +247,31 @@ function middleware1 (req, res) {
                     }
 
                     
-                    if (gusting == true) {
-                        res.render ("index", {title : req.params.airport, metarMessage : "Latest METAR from " + req.params.airport+", requested at timestamp " + readings.meta.timestamp + "<br />"
-                        +"Transmitted at " +transTime +" zulu on "+ transDate + ".<br />"
-                        +"visibility: "+readings.visibility.value + " statute miles<br/>"
-                        +"altimeter: " + readings.altimeter.value + " inches of mercury<br/>"
-                        +"wind: "+ windDir + " at "+ windSpeed + " knots, gusting to " + gustSpeed + " knots"+windVar+".<br/>"
-                        +"Tempreture: "+readings.temperature.value+" degrees<br/>Dewpoint: "+readings.dewpoint.value+" degrees.<br />"
-                        +"The current sea level preasure is 10"+ slp + " hPa."
-                        +"", cloudMessage : clouds, weatherMessage : preWeather, tafMessage : tafReport, infoMessage : "<br />Station Information:<br /> "
-                        +airInfo.name + "<br/>" + cityInfo.location.name +", " + cityInfo.location.region + ", " + cityInfo.location.country +"<br/>"
-                        +"Current local time is " +loc_Time+ " hours, "+ loc_Date
-                        +"", runwayMessage : runwayInfo, rawMessage : "<br/><br/> Raw Metar:<br/>" +readings.raw + "<br/><br/>Raw Taf" + tafReadings.raw});
-                    } else {
-                        res.render ("index", {title : req.params.airport, metarMessage : "Latest METAR from " + req.params.airport+", requested at timestamp " + readings.meta.timestamp + "<br />"
-                        +"Transmitted at " +transTime +" zulu on "+ transDate + ".<br />"
-                        +"visibility: "+readings.visibility.value + " statute miles<br />"
-                        +"altimeter: " + readings.altimeter.value + " inches of mercury<br />"
-                        +"wind: "+ windDir + " at "+ windSpeed + " knots"+windVar+".<br />"
-                        +"Tempreture: "+readings.temperature.value+" degrees<br/>Dewpoint: "+readings.dewpoint.value+" degrees.<br />"
-                        +"Sea level preasure: 10"+ slp + " hPa."
-                        +"", cloudMessage : clouds, weatherMessage : preWeather, tafMessage : tafReport, infoMessage : "<br />Station Information:<br /> "
-                        + airInfo.name + "<br/>" + cityInfo.location.name +", " + cityInfo.location.region + ", " + cityInfo.location.country +"<br/>"
-                        +"Current local time is " +loc_Time+ " hours, "+ loc_Date
-                        +"", runwayMessage : runwayInfo, rawMessage : "<br/><br/> Raw Metar:<br/>" +readings.raw + "<br/><br/>Raw Taf:<br/>" + tafReadings.raw});
-                    }
-                });
+                    
+                    res.render ("index", {
+                        title : req.params.airport, 
+                        metarMessage : 
+                            "<h3>METAR Info</h3><p>Latest METAR from " + req.params.airport+", Transmitted at " +transTime +" zulu on "+ transDate + "<br/>"
+                            +"requested at timestamp " + readings.meta.timestamp + "<br/></p>"
+                            +"<h3>Visibility</h3><p>"+readings.visibility.value + " statute miles</p>"
+                            +"<h3>Altimeter Setting</h3><p>" + readings.altimeter.value + " inches of mercury, Sea level preasure is 10"+ slp + " hPa.</p>"
+                            +"<h3>Wind</h3><p>"+ windDir + " at "+ windSpeed + " knots"+windVar+".</p>"
+                            +"<h3>Tempreture</h3><p>"+readings.temperature.value+"°C, Dewpoint: "+readings.dewpoint.value+"°C.</p>",
+                        cloudMessage : "<h3>Cloud Cover</h3><p>"+clouds+"</p>", 
+                        weatherMessage : "<h3>Predominant Weather</h3><p>"+preWeather+"</p>", 
+                        tafMessage : "<h3>TAF</h3><p>"+tafReport+"</p>", //no idea how im going to deal with this  
+                        infoMessage : 
+                            "<h3>Station Information</h3><p>"
+                            + airInfo.name + "<br/>" + cityInfo.location.name +", " + cityInfo.location.region + ", " + cityInfo.location.country +"<br/>"
+                            +"Current local time is " +loc_Time+ " hours, "+ loc_Date +"</p>",
+                        runwayMessage : runwayInfo, 
+                        rawMessage : 
+                            "<h3>Raw METAR:</h3><p>" +readings.raw + "</p><h3>Raw TAF:</h3><p>" + tafReadings.raw+"</p>"
+                    });
+                    
+                }); 
             });
-        });
+        }); // this is horrifying
     }   );
 }
 

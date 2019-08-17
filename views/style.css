@@ -1,7 +1,24 @@
-
 body {
     padding: 0;
     margin: 0;
+    background-color: #E2E2E2;
+}
+
+.sticky { /*anything put here will be sticky*/
+    position: sticky;
+    top: 0;
+}
+
+#header-top { /*background for the content*/
+    background: #c60c30;
+    padding: 0;
+    margin: 0;
+}
+
+#header-top-content {/*content stays centered*/
+    width: 1080px;
+    margin: 0 auto;
+    height: 70;
 }
 
 h1 {
@@ -9,26 +26,27 @@ h1 {
     color: white;
     font-weight:bold;
     font-style:normal;
-    background-color: #c60c30;
     margin: 0;
-    padding: 10;
-    
+    padding-top: 15px;
 }
 
-ul {
-    list-style-type: none;
+#header-bottom {
+    background: #333;
+    padding: 0;
     margin: 0;
+}
+
+ul { /*This is acting as header-bottom-content*/
+    list-style-type: none;
     padding: 0;
     overflow: hidden;
     background-color: #333;
+    margin: 0 auto;
+    width: 1080px;
+    height: 35;
 }
 
-div.sticky {
-    position: sticky;
-    top: 0;
-}
-
-input[type=button] {
+input[type=button] { /*GO button*/
     display: inline;
     float: left;
     background-color: #c60c30;
@@ -45,7 +63,7 @@ input:hover[type=button] {
     background-color: #770B21;
 }
 
-input[type=text] {
+input[type=text] { /*ICAO code input*/
     display: inline;
     float: left;
     background-color: black;
@@ -71,27 +89,39 @@ li a {
 
 li a:hover {
     background-color: #111;
+    text-decoration: none;
 }
 
-.norm { /*normal, non all-caps text*/
+#mainpage {
+    width: 1080px;
+    margin: 0 auto;
+    background-color: white;
+    padding-bottom: 20;
+    min-height: 1080px;
+    border-top: 1px solid white; /*for some reason, this gets rid of a white space between the page and the header*/
+}
+
+h3 {
+    font-family: 'Montserrat', sans-serif;
+    font-weight:bold;
+    font-style:normal;
+    color: white;
+    text-transform: uppercase;
+    margin-left:20;
+    padding-left: 10;
+    display: block;
+    width: 500px;
+    height: 30px;
+    line-height: 30px; /*this centres the text within the block*/
+    background-color: #afafaf;
+}
+
+p {
     font-family: 'Roboto', sans-serif;
     color: black;
     font-weight:normal;
     font-style:normal;
     margin-left:20;
-}
-
-p {
-    font-family: 'Roboto Mono', sans-serif;
-    color: black;
-    font-weight:normal;
-    font-style:normal;
-    text-transform: uppercase;
-    margin-left:20;
-}
-
-.mainPage {  /*this is just to prevent text and nav menu from overlaping*/
-    width: 80%;
-    padding-top:20px;
+    font-size: 20;
 }
 
