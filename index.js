@@ -1,12 +1,11 @@
 const express = require ("express");
-const request = require ("request");
+const request = require ("request-promise-native");
 const app = express();
 app.set("view engine", "pug");
 
 
-//AVWX REST API
-//get Auth token set up before Nov. 1
-//get "the station has # runways" s fixed
+//AVWX REST API get Auth token set up before Nov. 1
+//get "the station has # runways" s fixed and TAF fixed for remote airports like CYKP
 //swtiched from city name based loccation info to coordinate based info, switched from apixu api to GeoNames api
 
 
@@ -54,13 +53,28 @@ function middleware3 (req, res, next) {
 
 
 
-app.get("/metar/:airport", middleware1);
-function middleware1 (req, res) {
-    request ("https://avwx.rest/api/metar/"+req.params.airport+"?options=&format=json&onfail=cache", function (met_error, met_response, met_body) { //first request for getting metar info
-        var readings = JSON.parse(met_body);
-        
-        //decoding the Metar\
+app.get("/metar/:airport", function(req, res, next) {
+    middleware_Met (req, res, next);
+});
 
+
+function middleware_Met (req, res, next) {
+    var readings, tafReadings, airInfo, loc_Info;//declarations for all the parsed bodies
+
+    var requests = [request ("https://avwx.rest/api/metar/"+req.params.airport+"?options=&format=json&onfail=cache"), 
+                    request ("https://avwx.rest/api/taf/"+req.params.airport+"?options=summary&format=json&onfail=cache"),
+                    request ("https://avwx.rest/api/station/"+req.params.airport+"?format=json")]; //requests is an array of promises, 1 for each request,
+    Promise.all(requests).then(function(responses) {//returns a single promise for all of the promises in the array of requests, then executes the function
+        readings = JSON.parse(responses[0]); //first thing in the array of promises, has the readings for the METAR, the second has the readings for TAF, etc.
+        tafReadings = JSON.parse(responses[1]);
+        airInfo = JSON.parse(responses[2]);
+        return request('http://api.geonames.org/timezoneJSON?lat='+airInfo.latitude+'&lng='+airInfo.longitude+'&username=type_kenye_03'); //return another request-promise, then executes the function in .then
+    }).then (function (city_body){
+        loc_Info = JSON.parse (city_body);
+        //everytjomg from the previous request-promises is now in scope, the 
+
+        //===========================================================================================================================================METAR STUFF
+        
 
         var transDate = (readings.time.dt.substr(0, 4) +"-"+ numberToMonth(readings.time.dt.substr(5, 2)) +"-"+ readings.time.dt.substr(8, 2)); 
         var transTime = (readings.time.dt.substr(11, 5));
@@ -203,24 +217,23 @@ function middleware1 (req, res) {
                 var slp = (""+splitMet[i][3]+splitMet[i][4]+"."+splitMet[i][5]+"");
             }
         }
-        
-        
-        
-        request ("https://avwx.rest/api/taf/"+req.params.airport+"?options=summary&format=json&onfail=cache",function (taf_error, taf_response, taf_body) { //nested request for getting taf info, previous request is still in scope, would not be if i used multiple middlewares
-            var tafReadings = JSON.parse(taf_body);
+        //===================================================================================================TAF STUFF
+        var reportCount = 0;
+        var tafReport = "";
+        if (tafReadings.error != null) {//some stations provide METARs but no TAFs
+            var tafReport = "No TAF available from this station";
+            tafReadings.raw = "Nil"
+        } else {
             var splitTaf = (tafReadings.raw).split (" ");
             var tafDate = (tafReadings.time.dt.substr(0, 4) +"-"+ numberToMonth(readings.time.dt.substr(5, 2)) +"-"+ readings.time.dt.substr(8, 2)); 
             var tafTime = (tafReadings.time.dt.substr(11, 5));
-
-            var reportCount = 0;
-            var tafReport = "";
             for (var i = 0; i< splitTaf.length; i++) {
                 if (splitTaf[i].includes("KT")){
                     reportCount++;
                 }
                 
             }
-            
+
             tafReport = tafReport.concat("Latest TAF from " +req.params.airport+ ", transmitted at "+tafTime+" on "+ tafDate + "<br/><br/>");
             for (var i = 0; i<reportCount;i++) {
                 tafReport = tafReport.concat("From "+tafReadings.forecast[i].start_time.dt[0]+tafReadings.forecast[i].start_time.dt[1]+tafReadings.forecast[i].start_time.dt[2]+tafReadings.forecast[i].start_time.dt[3]+"-"); //concat current year
@@ -235,64 +248,69 @@ function middleware1 (req, res) {
             if (req.params.airport[0] == "C") {
                 tafReport = tafReport.concat("Next report at " + tafReadings.remarks[k-5] + tafReadings.remarks[k-4] + tafReadings.remarks[k-3] + tafReadings.remarks[k-2] + " hours zulu");
             } 
-            
-            
-            
-            request ("https://avwx.rest/api/station/"+req.params.airport+"?format=json",function (air_error, air_response, air_body) { //nested request for getting airport info
-                var airInfo = JSON.parse(air_body);
-                request('http://api.geonames.org/timezoneJSON?lat='+airInfo.latitude+'&lng='+airInfo.longitude+'&username=type_kenye_03', function (city_error, city_respose, city_body) {//using airport city to get local time info for that airport w/ weather api
-                    console.log ('http://api.geonames.org/timezoneJSON?lat='+airInfo.latitude+'&lng='+airInfo.longitude+'-73.77890015&username=type_kenye_03');
-                    var loc_Info = JSON.parse(city_body);
-                    var loc_Time = (loc_Info.time.substr(11, 5));
-                    var loc_Date = (loc_Info.time.substr(0, 10));//local date and time
+        }
+        //===================================================================================================STATION INFO STUFF
+        
 
-                    //runway information
-                    var runwayInfo = "";
-                    rwyCount = airInfo.runways.length;
-                    runwayInfo = ("This station has " + rwyCount + " runways.<br/>");
-                    for (var i = 0; i < rwyCount; i++){
-                        runwayInfo = runwayInfo.concat(airInfo.runways[i].ident1+"-"+airInfo.runways[i].ident2+", "+ airInfo.runways[i].length_ft +" ft <br/>");
-                    }
+        var loc_Time = (loc_Info.time.substr(11, 5));
+        var loc_Date = (loc_Info.time.substr(0, 10));//local date and time
 
-                    
-                    
-                    res.render ("index", {
-                        title : req.params.airport, 
-                        metarMessage : 
-                            "<h3>METAR Info</h3><p>Latest METAR from " + req.params.airport+", Transmitted at " +transTime +" zulu on "+ transDate + "<br/>"
-                            +"requested at timestamp " + readings.meta.timestamp + "<br/></p>"
-                            +"<h3>Visibility</h3><p>"+readings.visibility.value + " statute miles</p>"
-                            +"<h3>Altimeter Setting</h3><p>" + readings.altimeter.value + " inches of mercury, Sea level preasure is 10"+ slp + " hPa.</p>"
-                            +"<h3>Wind</h3><p>"+ windDir + " at "+ windSpeed + " knots"+windVar+".</p>"
-                            +"<h3>Tempreture</h3><p>"+readings.temperature.value+"°C, Dewpoint: "+readings.dewpoint.value+"°C.</p>",
-                        cloudMessage : "<h3>Cloud Cover</h3><p>"+clouds+"</p>", 
-                        weatherMessage : "<h3>Predominant Weather</h3><p>"+preWeather+"</p>", 
-                        tafMessage : "<h3>TAF</h3><p>"+tafReport+"</p>", //no idea how im going to deal with this  
-                        infoMessage : 
-                            "<h3>Station Information</h3><p>"
-                            + airInfo.name + "<br/>" + airInfo.city +", " + loc_Info.countryName + "<br/>"
-                            +"Current local time is " +loc_Time+ " hours, "+ loc_Date +"</p>",
-                        runwayMessage : runwayInfo, 
-                        rawMessage : 
-                            "<h3>Raw METAR:</h3><p>" +readings.raw + "</p><h3>Raw TAF:</h3><p>" + tafReadings.raw+"</p>"
-                    });
-                    
-                }); 
-            });
-        }); // this is horrifying
-    }   );
-}
+        //runway information
+        var runwayInfo = "";
+        if (airInfo.runways == null) { //some stations have no runways
+            "This station has no runways"
+        } else {
+            rwyCount = airInfo.runways.length;
+            runwayInfo = ("This station has " + rwyCount + " runways.<br/>");
+            for (var i = 0; i < rwyCount; i++){
+                runwayInfo = runwayInfo.concat(airInfo.runways[i].ident1+"-"+airInfo.runways[i].ident2+", "+ airInfo.runways[i].length_ft +" ft <br/>");
+            }
+        }
+        
+        
 
+        var city; //some stations are too remote to be considered inside a city, in that case only the country name will be displayed.
+        if (airInfo.city == null) {
+            city = ""
+        } else {
+            city = airInfo.city + ", ";
+        }
+        
+        res.render ("index", {
+            title : req.params.airport, 
+            metarMessage : 
+                "<h3>METAR Info</h3><p>Latest METAR from " + req.params.airport+", Transmitted at " +transTime +" zulu on "+ transDate + "<br/>"
+                +"requested at timestamp " + readings.meta.timestamp + "<br/></p>"
+                +"<h3>Visibility</h3><p>"+readings.visibility.value + " statute miles</p>"
+                +"<h3>Altimeter Setting</h3><p>" + readings.altimeter.value + " inches of mercury, Sea level preasure is 10"+ slp + " hPa.</p>"
+                +"<h3>Wind</h3><p>"+ windDir + " at "+ windSpeed + " knots"+windVar+".</p>"
+                +"<h3>Tempreture</h3><p>"+readings.temperature.value+"°C, Dewpoint: "+readings.dewpoint.value+"°C.</p>",
+            cloudMessage : "<h3>Cloud Cover</h3><p>"+clouds+"</p>", 
+            weatherMessage : "<h3>Predominant Weather</h3><p>"+preWeather+"</p>", 
+            tafMessage : "<h3>TAF</h3><p>"+tafReport+"</p>", //no idea how im going to deal with this  
+            infoMessage : 
+                "<h3>Station Information</h3><p>"
+                + airInfo.name + "<br/>" + city + loc_Info.countryName + "<br/>"
+                +"Current local time is " +loc_Time+ " hours, "+ loc_Date +"</p>",
+            runwayMessage : runwayInfo, 
+            rawMessage : 
+                "<h3>Raw METAR:</h3><p>" +readings.raw + "</p><h3>Raw TAF:</h3><p>" + tafReadings.raw+"</p>"
+        });
 
-
+    }).catch(function (error){ //in resolved state, the .thens will execute, if there is a throw anywhere, (request will throw on its own) .catch will execute. throw new Error; anywhere would do the same.
+        if (error.error && error.error.includes("is not a valid ICAO")) {
+            res.render ("index", {title : req.params.airport, metarMessage : "<h3>ERROR</h3><p>No METAR or TAF available from this station or station does not exist.</p>"});
+        } else {
+            next(error);
+        }
+    });
+};
 
 //res.send ("Latest METAR from " + req.params.airport+", at timestamp: " + readings.meta.timestamp + "(zulu)<br/>visibility: "+readings.visibility.value + " statute miles<br/>altimeter setting is " + readings.altimeter.value + " inches of mercury<br/>wind is blowing "+ splitMet[i][0]+ splitMet[i][1]+ splitMet[i][2] + " degrees at "+splitMet[i][3] + splitMet[i][4] + " knots gusting to " + splitMet[i][6] + splitMet[i][6] + " knots. <br/>" );
 
-
-
+//res.render ("index", {title : req.params.airport, metarMessage : "<h3>ERROR</h3><p>No METAR or TAF available from this station or station does not exist.</p>"});
 
 const port = 4000;
-
 app.listen(port, () => console.log(`Example app listening on port ${port}!`))
 
 
