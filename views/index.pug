@@ -14,7 +14,7 @@ body
             ul
                 -var airport = '';
                 input(type="text" id="icao" maxlength=4 placeholder="Enter an ICAO code" onchange="airport = document.getElementById('icao').value;")
-                input(type='button' value="GO" id="goIcao" onclick="location.replace('http://localhost:4000/metar/'+airport);")
+                input(type='button' value="GO" id="goIcao" onclick="location.replace('/metar/'+airport);")
                 script.  
                     var box = document.getElementById("icao");
                     box.addEventListener("keyup", function(event) {
@@ -24,9 +24,9 @@ body
                         }
                     });
                 li
-                    a(href='http://localhost:4000/') HOME
+                    a(href='/') HOME
                 li
-                    a(href='http://localhost:4000/howto') GUIDE
+                    a(href='/howto') GUIDE
 
     #mainpage
         - var temp= homeMessage;

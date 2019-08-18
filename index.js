@@ -310,7 +310,7 @@ function middleware_Met (req, res, next) {
 
 //res.render ("index", {title : req.params.airport, metarMessage : "<h3>ERROR</h3><p>No METAR or TAF available from this station or station does not exist.</p>"});
 
-const port = 4000;
+const port = process.argv[2] || 4000;
 app.listen(port, () => console.log(`Example app listening on port ${port}!`))
 
 
