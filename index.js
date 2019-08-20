@@ -297,8 +297,8 @@ function middleware_Met (req, res, next) {
                 "<h3>Raw METAR:</h3><p>" +readings.raw + "</p><h3>Raw TAF:</h3><p>" + tafReadings.raw+"</p>"
         });
 
-    }).catch(function (error){ //in resolved state, the .thens will execute, if there is a throw anywhere, (request will throw on its own) .catch will execute. throw new Error; anywhere would do the same.
-        if (error.error && error.error.includes("is not a valid ICAO")) {
+    }).catch(function (error){ //in resolved state, the .thens will execute, if there is a throw error anywhere, (request promise will throw on its own) .catch will execute. throw new Error; anywhere would do the same.
+        if (error.error && (error.error.includes("is not a valid ICAO") || error.error.includes("report or cache"))) {
             res.render ("index", {title : req.params.airport, metarMessage : "<h3>ERROR</h3><p>No METAR or TAF available from this station or station does not exist.</p>"});
         } else {
             next(error);
@@ -320,7 +320,7 @@ app.listen(port, () => console.log(`Example app listening on port ${port}!`))
 // promise1 = fetch(url);
 // promise2 = fetch(url2);
 // promise3 = fetch(url3);
-
+  
 // Promise.all([promise1, promise2, promise3]).then(function(results) {
 //     results[0];
 // })
