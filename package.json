@@ -10,7 +10,9 @@
   "license": "ISC",
   "dependencies": {
     "express": "^4.17.1",
+    "fs": "0.0.1-security",
     "node": "^12.8.0",
+    "path": "^0.12.7",
     "pug": "^2.0.4",
     "request": "^2.88.0",
     "request-promise-native": "^1.0.7"

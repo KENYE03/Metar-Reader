@@ -1,3 +1,4 @@
+//METAR PAGE
 html
 head
     title= title 
@@ -14,10 +15,10 @@ body
             ul
                 -var airport = '';
                 input(type="text" id="icao" maxlength=4 placeholder="Enter an ICAO code" onchange="airport = document.getElementById('icao').value;")
-                input(type='button' value="GO" id="goIcao" onclick="location.replace('/metar/'+airport);")
+                input(type='button' value="GO ➔" id="goIcao" onclick="location.replace('/metar/'+airport);")
                 script.  
-                    var box = document.getElementById("icao");
-                    box.addEventListener("keyup", function(event) {
+                    var inputBox = document.getElementById("icao");
+                    inputBox.addEventListener("keyup", function(event) {
                         if (event.keyCode === 13) {
                             event.preventDefault();
                             document.getElementById("goIcao").click();
@@ -29,6 +30,7 @@ body
                     a(href='/howto') GUIDE
 
     #mainpage
+        
         - var temp= homeMessage;
         p !{temp}
         //the !{} is needed for the html in temp to actually work.
@@ -47,6 +49,9 @@ body
         p !{temp}
         - var temp= tafMessage;
         p !{temp}
+        - var temp= diagramHeaderMessage;
+        p !{temp}
+        img(src=diagramMessage , alt='some image') 
         - var temp= infoMessage;
         p !{temp}
         - var temp= runwayMessage;
