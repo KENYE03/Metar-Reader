@@ -338,7 +338,7 @@ app.listen(port, () => console.log(`Example app listening on port ${port}!`))
 // promise1 = fetch(url);
 // promise2 = fetch(url2);
 // promise3 = fetch(url3);
-
+  
 // Promise.all([promise1, promise2, promise3]).then(function(results) {
 //     results[0];
 // })
