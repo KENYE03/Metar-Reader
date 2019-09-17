@@ -1,15 +1,19 @@
+
+
+
 body {
     padding: 0;
     margin: 0;
     background-color: #E2E2E2;
 }
 
+/*===============================================HEADER SECTION============================================*/
 .sticky { /*anything put here will be sticky*/
     position: sticky;
     top: 0;
 }
 
-#header-top { /*background for the content*/
+#header-top { /*background for the content, carries the actualy top-content*/
     background: #c60c30;
     padding: 0;
     margin: 0;
@@ -30,7 +34,7 @@ h1 {
     padding-top: 15px;
 }
 
-#header-bottom {
+#header-bottom {/*carries the bottom-content*/
     background: #333;
     padding: 0;
     margin: 0;
@@ -92,6 +96,8 @@ li a:hover {
     text-decoration: none;
 }
 
+
+/*===============================================METAR SECTION============================================*/
 #mainpage {
     width: 1080px;
     margin: 0 auto;
@@ -125,3 +131,89 @@ p {
     font-size: 20;
 }
 
+img {
+    margin: 20;
+}
+
+/*===============================================HOMEPAGE SECTION============================================*/
+
+input.big[type=button] { /*.big makes a new class for input called big, anytime you want to use this type of input box, add class="big"*/
+    margin-right: 40;
+    margin-left: 40;
+    margin-top: 20;
+    margin-bottom: 20;
+    display: block;
+    background-color: #c60c30;
+    border: none;
+    width: 1000px;
+    padding: 10px;
+    font-size: 20px;
+    cursor: pointer; 
+    font-family: 'Montserrat', sans-serif;
+    color: white;
+    font-weight:bold;
+    font-style:normal; 
+}
+
+input.big:hover[type=button] {
+    background-color: #770B21;
+}
+
+input.big[type=text] { /*ICAO code input*/
+    margin-right: 40;
+    margin-left: 40;
+    margin-top: 18;
+    display: block;
+    background-color: #333;
+    border: none;
+    color: white;
+    width: 1000px;
+    padding: 20px;
+    font-family: 'Roboto', sans-serif;
+    font-weight: bold;
+    font-size: 30px;
+    letter-spacing: 4px;
+    text-align: center;
+    text-transform: uppercase;
+}
+
+::placeholder {
+    font-family: 'Roboto', sans-serif;
+    font-weight: bold;
+    letter-spacing: normal;
+}
+  
+:-ms-input-placeholder { /* Internet Explorer 10-11 */
+    font-family: 'Roboto', sans-serif;
+    font-weight: bold;
+    letter-spacing: normal;
+}
+  
+::-ms-input-placeholder { /* Microsoft Edge */
+    font-family: 'Roboto', sans-serif;
+    font-weight: bold;
+    letter-spacing: normal;
+}
+
+h1.home {
+    font-family: 'Roboto', sans-serif;
+    color: black;
+    font-weight:normal;
+    font-style:normal;
+    margin-left:40;
+    margin-top: 18;
+    margin-bottom: 18;
+    font-size: 30;
+    text-align: center;
+}
+
+p.home {
+    font-family: 'Roboto', sans-serif;
+    color: black;
+    font-weight:normal;
+    font-style:normal;
+    margin-left:40;
+    font-size: 20;
+    text-align: center;
+    margin: 4;
+}

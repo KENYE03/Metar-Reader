@@ -1,0 +1,57 @@
+//HOME PAGE
+html
+head
+    title= title 
+    link(rel='stylesheet', href='https://fonts.googleapis.com/css?family=Montserrat|Roboto+Mono|Roboto')
+    style
+        include style.css
+body
+    #header-top
+        #header-top-content
+            h1 METAR READER
+    
+    .sticky
+        #header-bottom
+            ul
+                -var airport = '';
+                input(type="text" id="icao" maxlength=4 placeholder="Enter an ICAO code" onchange="airport = document.getElementById('icao').value;")
+                input( type='button' value="GO ➔" id="goIcao" onclick="location.replace('/metar/'+airport);")
+                script.  
+                    var box1 = document.getElementById("icao");
+                    box1.addEventListener("keyup", function(event) {
+                        if (event.keyCode === 13 && box1 === document.activeElement ) {
+                            event.preventDefault();
+                            location.replace('/metar/'+airport);
+                        }
+                    });
+                li
+                    a(href='/') HOME
+                li
+                    a(href='/howto') GUIDE
+
+    #mainpage
+    
+        //problem: pressing enter will always navigate to what was in last eddited box, not the contents of current box. Also box2 === document.activeElement changes nothing.
+        
+        h1.home Welcome to Metar Reader.
+        p.home To start, type in a 4-letter ICAO code of any airport in the US or Canada.
+        
+
+
+        -var airport = '';
+                input(class="big" type="text" id="homeBox" maxlength=4 placeholder="e.g. KJFK" onchange="airport = document.getElementById('homeBox').value;")
+                input(class="big" type='button' value="GO ➔" id="goHomeBox" onclick="location.replace('/metar/'+airport);")
+                script.  
+                    var box2 = document.getElementById("homeBox");
+                    box2.addEventListener("keyup", function(event) {
+                        if (event.keyCode === 13 && box2 === document.activeElement ) {
+                            event.preventDefault();
+                            location.replace('/metar/'+airport); 
+                        }
+                    });
+        
+        p.home METARs are regular aviatioin weather reports issued regularly airports and weather stations.
+        p.home They are valid for one hour only.
+        p.home TAFs are longer reports with specific validity periods raging from 20 minuties to 30 hours.
+        p.home They report on specific weather conditions expected to affect your landing and takeoff.
+        p.home All altitues are given in AGL, all degrees are in degrees true.

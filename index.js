@@ -1,8 +1,11 @@
 const express = require ("express");
 const request = require ("request-promise-native");
-const app = express();
+const fs = require ("fs");
+const path = require ("path");
+const app = new express();
 app.set("view engine", "pug");
 
+app.use(express.static(path.join(__dirname, 'views')));
 
 //AVWX REST API get Auth token set up before Nov. 1
 //get "the station has # runways" s fixed and TAF fixed for remote airports like CYKP
@@ -10,8 +13,9 @@ app.set("view engine", "pug");
 
 
 function numberToMonth (n) {
-        return ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul","Aug", "Sep", "Oct", "Nov", "Dec"][parseInt(n, 10) + 1];
+        return ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul","Aug", "Sep", "Oct", "Nov", "Dec"][parseInt(n, 10) - 1];
 }
+
 
 function cloudDecode (code) {
     if (code == "CLR") { //CLR and SKC means that there are no clouds
@@ -33,11 +37,12 @@ function cloudDecode (code) {
         return "Overcast"
     }
 }
-
+ 
+var diagramsList = "CYKF CYOW CYUL CYVR CYYC CYYZ KATL KAUS KBNA KBOS KBWI KCLT KCLT KDAL KDCA KDEN KDFW KDTW KEWR KFLL KIAD KIAH KLAS KLAX KLGA KMCO KMDE KMIA KMSP KORD KPDK KPHL KPHX KPHX KSAN KSEA KSFU KSLC KSTL KTPA PHNL";
  
 app.get("/", middleware2);//if needed, multiple middleware functions can be put in one app.get, but only one res of course
 function middleware2 (req, res, next) { //please keep in mind that a function name is not needed, also => may be used instead
-    res.render ("index", {homeMessage : "Welcome to the Metar reader!" 
+    res.render ("index2", {homeMessage : "Welcome to the Metar reader!" 
         +"<br/> To start, type in a 4-letter ICAO code of any airport in the US or Canada."
         +"<br/>METARs are regular aviatioin weather reports issued regularly airports and weather stations."
         +"<br/>They are valid for one hour only."
@@ -48,9 +53,8 @@ function middleware2 (req, res, next) { //please keep in mind that a function na
 
 app.get("/howto", middleware3);
 function middleware3 (req, res, next) {
-    res.render ("index", {homeMessage : "something on how to read a Metar and Taf" });
+    res.render ("index2", {homeMessage : "something on how to read a Metar and Taf" });
 }
-
 
 
 app.get("/metar/:airport", function(req, res, next) {
@@ -59,22 +63,23 @@ app.get("/metar/:airport", function(req, res, next) {
 
 
 function middleware_Met (req, res, next) {
-    var readings, tafReadings, airInfo, loc_Info;//declarations for all the parsed bodies
+    res.set('Authorization', '8Tt5zTsc8i8BzFmPD7oIcFVPewB17gPdLvquubKStjU');
+    var readings, tafReadings, airInfo, locInfo;//declarations for all the parsed bodies
 
     var requests = [request ("https://avwx.rest/api/metar/"+req.params.airport+"?options=&format=json&onfail=cache"), 
                     request ("https://avwx.rest/api/taf/"+req.params.airport+"?options=summary&format=json&onfail=cache"),
                     request ("https://avwx.rest/api/station/"+req.params.airport+"?format=json")]; //requests is an array of promises, 1 for each request,
-    Promise.all(requests).then(function(responses) {//returns a single promise for all of the promises in the array of requests, then executes the function
+    Promise.all(requests).then(function(responses) {//returns a single promise for all of the promises in the array of requests, then executes the function, this function just takes reponses (which has all the metar info) and puts in into readings
         readings = JSON.parse(responses[0]); //first thing in the array of promises, has the readings for the METAR, the second has the readings for TAF, etc.
         tafReadings = JSON.parse(responses[1]);
         airInfo = JSON.parse(responses[2]);
-        return request('http://api.geonames.org/timezoneJSON?lat='+airInfo.latitude+'&lng='+airInfo.longitude+'&username=type_kenye_03'); //return another request-promise, then executes the function in .then
+        return request('http://api.geonames.org/timezoneJSON?lat='+airInfo.latitude+'&lng='+airInfo.longitude+'&username=type_kenye_03'); //return another request-promise, then executes the function in .then, we needed the info in responses[2] for this request, so we can't make the request-promise until now
     }).then (function (city_body){
-        loc_Info = JSON.parse (city_body);
-        //everytjomg from the previous request-promises is now in scope, the 
+        locInfo = JSON.parse (city_body);
+        //everytjomg from the previous request-promises is now in scope
 
-        //===========================================================================================================================================METAR STUFF
-        
+        //===========================================================================================================================================METAR STUFF=============
+        //===================================================================================================================================================================
 
         var transDate = (readings.time.dt.substr(0, 4) +"-"+ numberToMonth(readings.time.dt.substr(5, 2)) +"-"+ readings.time.dt.substr(8, 2)); 
         var transTime = (readings.time.dt.substr(11, 5));
@@ -217,7 +222,8 @@ function middleware_Met (req, res, next) {
                 var slp = (""+splitMet[i][3]+splitMet[i][4]+"."+splitMet[i][5]+"");
             }
         }
-        //===================================================================================================TAF STUFF
+        //=============================================================================================================================================TAF STUFF=============
+        //===================================================================================================================================================================
         var reportCount = 0;
         var tafReport = "";
         if (tafReadings.error != null) {//some stations provide METARs but no TAFs
@@ -249,11 +255,12 @@ function middleware_Met (req, res, next) {
                 tafReport = tafReport.concat("Next report at " + tafReadings.remarks[k-5] + tafReadings.remarks[k-4] + tafReadings.remarks[k-3] + tafReadings.remarks[k-2] + " hours zulu");
             } 
         }
-        //===================================================================================================STATION INFO STUFF
+        //====================================================================================================================================STATION INFO STUFF=============
+        //===================================================================================================================================================================
         
 
-        var loc_Time = (loc_Info.time.substr(11, 5));
-        var loc_Date = (loc_Info.time.substr(0, 10));//local date and time
+        var locTime = (locInfo.time.substr(11, 5));
+        var locDate = (locInfo.time.substr(0, 10));//local date and time
 
         //runway information
         var runwayInfo = "";
@@ -276,7 +283,16 @@ function middleware_Met (req, res, next) {
             city = airInfo.city + ", ";
         }
         
-        res.render ("index", {
+        var diagramAddress = "";
+        var diagramHeader = "";
+        if (diagramsList.includes(req.params.airport)) {
+            diagramAddress = "/diagrams/" + req.params.airport +".png";
+            diagramHeader = "<h3>AIRPORT DIAGRAM</h3>"
+        } else {
+            diagramAddress = "/diagrams/blank.png";
+        }
+
+        res.render ("index1", {
             title : req.params.airport, 
             metarMessage : 
                 "<h3>METAR Info</h3><p>Latest METAR from " + req.params.airport+", Transmitted at " +transTime +" zulu on "+ transDate + "<br/>"
@@ -284,22 +300,24 @@ function middleware_Met (req, res, next) {
                 +"<h3>Visibility</h3><p>"+readings.visibility.value + " statute miles</p>"
                 +"<h3>Altimeter Setting</h3><p>" + readings.altimeter.value + " inches of mercury, Sea level preasure is 10"+ slp + " hPa.</p>"
                 +"<h3>Wind</h3><p>"+ windDir + " at "+ windSpeed + " knots"+windVar+".</p>"
-                +"<h3>Tempreture</h3><p>"+readings.temperature.value+"°C, Dewpoint: "+readings.dewpoint.value+"°C.</p>",
+                +"<h3>Tempreture</h3><p>Currently "+readings.temperature.value+"°C, dewpoint at "+readings.dewpoint.value+"°C.</p>",
             cloudMessage : "<h3>Cloud Cover</h3><p>"+clouds+"</p>", 
             weatherMessage : "<h3>Predominant Weather</h3><p>"+preWeather+"</p>", 
             tafMessage : "<h3>TAF</h3><p>"+tafReport+"</p>", //no idea how im going to deal with this  
             infoMessage : 
                 "<h3>Station Information</h3><p>"
-                + airInfo.name + "<br/>" + city + loc_Info.countryName + "<br/>"
-                +"Current local time is " +loc_Time+ " hours, "+ loc_Date +"</p>",
+                + airInfo.name + "<br/>" + city + locInfo.countryName + "<br/>"
+                +"Current local time is " +locTime+ " hours, "+ locDate +"</p>",
             runwayMessage : runwayInfo, 
             rawMessage : 
-                "<h3>Raw METAR:</h3><p>" +readings.raw + "</p><h3>Raw TAF:</h3><p>" + tafReadings.raw+"</p>"
+                "<h3>Raw METAR:</h3><p>" +readings.raw + "</p><h3>Raw TAF:</h3><p>" + tafReadings.raw+"</p>",
+            diagramHeaderMessage : diagramHeader,
+            diagramMessage : diagramAddress
         });
 
     }).catch(function (error){ //in resolved state, the .thens will execute, if there is a throw anywhere, (request will throw on its own) .catch will execute. throw new Error; anywhere would do the same.
         if (error.error && error.error.includes("is not a valid ICAO")) {
-            res.render ("index", {title : req.params.airport, metarMessage : "<h3>ERROR</h3><p>No METAR or TAF available from this station or station does not exist.</p>"});
+            res.render ("index1", {title : req.params.airport, metarMessage : "<h3>ERROR</h3><p>No METAR or TAF available from this station or station does not exist.</p>"});
         } else {
             next(error);
         }
@@ -308,7 +326,7 @@ function middleware_Met (req, res, next) {
 
 //res.send ("Latest METAR from " + req.params.airport+", at timestamp: " + readings.meta.timestamp + "(zulu)<br/>visibility: "+readings.visibility.value + " statute miles<br/>altimeter setting is " + readings.altimeter.value + " inches of mercury<br/>wind is blowing "+ splitMet[i][0]+ splitMet[i][1]+ splitMet[i][2] + " degrees at "+splitMet[i][3] + splitMet[i][4] + " knots gusting to " + splitMet[i][6] + splitMet[i][6] + " knots. <br/>" );
 
-//res.render ("index", {title : req.params.airport, metarMessage : "<h3>ERROR</h3><p>No METAR or TAF available from this station or station does not exist.</p>"});
+//res.render ("index1", {title : req.params.airport, metarMessage : "<h3>ERROR</h3><p>No METAR or TAF available from this station or station does not exist.</p>"});
 
 const port = process.argv[2] || 4000;
 app.listen(port, () => console.log(`Example app listening on port ${port}!`))
