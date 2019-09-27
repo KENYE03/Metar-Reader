@@ -38,7 +38,7 @@ function cloudDecode (code) {
     }
 }
  
-var diagramsList = "CYKF CYOW CYUL CYVR CYYC CYYZ KATL KAUS KBNA KBOS KBWI KCLT KCLT KDAL KDCA KDEN KDFW KDTW KEWR KFLL KIAD KIAH KLAS KLAX KLGA KMCO KMDE KMIA KMSP KORD KPDK KPHL KPHX KPHX KSAN KSEA KSFU KSLC KSTL KTPA PHNL";
+var diagramsList = "CYKF CYOW CYUL CYVR CYYC CYYZ KATL KAUS KBNA KBOS KBWI KCLT KCLT KDAL KDCA KDEN KDFW KDTW KEWR KFLL KIAD KIAH KJFK KLAS KLAX KLGA KMCO KMDW KMIA KMSP KORD KPDK KPHL KPHX KPHX KSAN KSEA KSFU KSLC KSTL KTPA PHNL";
  
 app.get("/", middleware2);//if needed, multiple middleware functions can be put in one app.get, but only one res of course
 function middleware2 (req, res, next) { //please keep in mind that a function name is not needed, also => may be used instead
@@ -66,9 +66,18 @@ function middleware_Met (req, res, next) {
     res.set('Authorization', '8Tt5zTsc8i8BzFmPD7oIcFVPewB17gPdLvquubKStjU');
     var readings, tafReadings, airInfo, locInfo;//declarations for all the parsed bodies
 
-    var requests = [request ("https://avwx.rest/api/metar/"+req.params.airport+"?options=&format=json&onfail=cache"), 
-                    request ("https://avwx.rest/api/taf/"+req.params.airport+"?options=summary&format=json&onfail=cache"),
-                    request ("https://avwx.rest/api/station/"+req.params.airport+"?format=json")]; //requests is an array of promises, 1 for each request,
+    var requests = [request ({
+                        "uri" : "https://avwx.rest/api/metar/"+req.params.airport+"?options=&format=json&onfail=cache", 
+                        "headers" : {"Authorization" : "8Tt5zTsc8i8BzFmPD7oIcFVPewB17gPdLvquubKStjU"}
+                    }), 
+                    request ({
+                        "uri" : "https://avwx.rest/api/taf/"+req.params.airport+"?options=summary&format=json&onfail=cache", 
+                        "headers" : {"Authorization" : "8Tt5zTsc8i8BzFmPD7oIcFVPewB17gPdLvquubKStjU"}
+                    }),    
+                    request ({
+                        "uri" : "https://avwx.rest/api/station/"+req.params.airport+"?format=json", 
+                        "headers" : {"Authorization" : "8Tt5zTsc8i8BzFmPD7oIcFVPewB17gPdLvquubKStjU"}
+                    })]; //requests is an array of promises, 1 for each request,
     Promise.all(requests).then(function(responses) {//returns a single promise for all of the promises in the array of requests, then executes the function, this function just takes reponses (which has all the metar info) and puts in into readings
         readings = JSON.parse(responses[0]); //first thing in the array of promises, has the readings for the METAR, the second has the readings for TAF, etc.
         tafReadings = JSON.parse(responses[1]);
@@ -283,6 +292,8 @@ function middleware_Met (req, res, next) {
             city = airInfo.city + ", ";
         }
         
+
+        //DIAGRAMS ==================
         var diagramAddress = "";
         var diagramHeader = "";
         if (diagramsList.includes(req.params.airport)) {
@@ -317,7 +328,7 @@ function middleware_Met (req, res, next) {
 
     }).catch(function (error){ //in resolved state, the .thens will execute, if there is a throw anywhere, (request will throw on its own) .catch will execute. throw new Error; anywhere would do the same.
         if (error.error && error.error.includes("is not a valid ICAO")) {
-            res.render ("index1", {title : req.params.airport, metarMessage : "<h3>ERROR</h3><p>No METAR or TAF available from this station or station does not exist.</p>"});
+            res.render ("index1", {title : req.params.airport, metarMessage : "<h3>ERROR</h3><p>No METAR or TAF available from this station or station does not exist.</p>", diagramMessage : "/diagrams/blank.png"});
         } else {
             next(error);
         }
