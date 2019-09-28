@@ -38,7 +38,7 @@ function cloudDecode (code) {
     }
 }
  
-var diagramsList = "CYKF CYOW CYUL CYVR CYYC CYYZ KATL KAUS KBNA KBOS KBWI KCLT KCLT KDAL KDCA KDEN KDFW KDTW KEWR KFLL KIAD KIAH KJFK KLAS KLAX KLGA KMCO KMDW KMIA KMSP KORD KPDK KPHL KPHX KPHX KSAN KSEA KSFU KSLC KSTL KTPA PHNL";
+var diagramsList = "CYKF CYOW CYUL CYVR CYYC CYYZ KATL KAUS KBNA KBOS KBWI KCTL KDAL KDCA KDEN KDFW KDTW KEWR KFLL KIAD KIAH KJFK KLAS KLAX KLGA KMCO KMDW KMIA KMSP KORD KPDK KPHL KPHX KPHX KSAN KSEA KSFU KSLC KSTL KTPA PHNL";
  
 app.get("/", middleware2);//if needed, multiple middleware functions can be put in one app.get, but only one res of course
 function middleware2 (req, res, next) { //please keep in mind that a function name is not needed, also => may be used instead
@@ -63,21 +63,31 @@ app.get("/metar/:airport", function(req, res, next) {
 
 
 function middleware_Met (req, res, next) {
+
+    var airportCode = req.params.airport;
+    // if (diagramsList.includes("K"+airportCode)) {
+    //     airportCode = "K"+airportCode;
+    // } else if (diagramsList.includes("C"+airportCode)){
+    //     airportCode = "C"+airportCode;
+    // } 
+
+
     res.set('Authorization', '8Tt5zTsc8i8BzFmPD7oIcFVPewB17gPdLvquubKStjU');
     var readings, tafReadings, airInfo, locInfo;//declarations for all the parsed bodies
-
     var requests = [request ({
-                        "uri" : "https://avwx.rest/api/metar/"+req.params.airport+"?options=&format=json&onfail=cache", 
+                        "uri" : "https://avwx.rest/api/metar/"+airportCode+"?options=&format=json&onfail=cache", 
                         "headers" : {"Authorization" : "8Tt5zTsc8i8BzFmPD7oIcFVPewB17gPdLvquubKStjU"}
                     }), 
                     request ({
-                        "uri" : "https://avwx.rest/api/taf/"+req.params.airport+"?options=summary&format=json&onfail=cache", 
+                        "uri" : "https://avwx.rest/api/taf/"+airportCode+"?options=summary&format=json&onfail=cache", 
                         "headers" : {"Authorization" : "8Tt5zTsc8i8BzFmPD7oIcFVPewB17gPdLvquubKStjU"}
                     }),    
                     request ({
-                        "uri" : "https://avwx.rest/api/station/"+req.params.airport+"?format=json", 
+                        "uri" : "https://avwx.rest/api/station/"+airportCode+"?format=json", 
                         "headers" : {"Authorization" : "8Tt5zTsc8i8BzFmPD7oIcFVPewB17gPdLvquubKStjU"}
                     })]; //requests is an array of promises, 1 for each request,
+
+    
     Promise.all(requests).then(function(responses) {//returns a single promise for all of the promises in the array of requests, then executes the function, this function just takes reponses (which has all the metar info) and puts in into readings
         readings = JSON.parse(responses[0]); //first thing in the array of promises, has the readings for the METAR, the second has the readings for TAF, etc.
         tafReadings = JSON.parse(responses[1]);
@@ -249,7 +259,7 @@ function middleware_Met (req, res, next) {
                 
             }
 
-            tafReport = tafReport.concat("Latest TAF from " +req.params.airport+ ", transmitted at "+tafTime+" on "+ tafDate + "<br/><br/>");
+            tafReport = tafReport.concat("Latest TAF from " +airportCode+ ", transmitted at "+tafTime+" on "+ tafDate + "<br/><br/>");
             for (var i = 0; i<reportCount;i++) {
                 tafReport = tafReport.concat("From "+tafReadings.forecast[i].start_time.dt[0]+tafReadings.forecast[i].start_time.dt[1]+tafReadings.forecast[i].start_time.dt[2]+tafReadings.forecast[i].start_time.dt[3]+"-"); //concat current year
                 tafReport = tafReport.concat(numberToMonth(tafReadings.forecast[i].start_time.dt[5]+tafReadings.forecast[i].start_time.dt[6])+"-"+tafReadings.forecast[i].start_time.repr[0]+tafReadings.forecast[i].start_time.repr[1]); //concat current month and validity day
@@ -260,7 +270,7 @@ function middleware_Met (req, res, next) {
                 tafReport = tafReport.concat(""+tafReadings.forecast[i].summary+"<br/><br/>");
             }
             var k =  tafReadings.remarks.length; //finding the end of the remarks to get the next transmission time.
-            if (req.params.airport[0] == "C") {
+            if (airportCode[0] == "C") {
                 tafReport = tafReport.concat("Next report at " + tafReadings.remarks[k-5] + tafReadings.remarks[k-4] + tafReadings.remarks[k-3] + tafReadings.remarks[k-2] + " hours zulu");
             } 
         }
@@ -275,8 +285,11 @@ function middleware_Met (req, res, next) {
         var runwayInfo = "";
         if (airInfo.runways == null) { //some stations have no runways
             "This station has no runways"
+        } else if (airInfo.runways.length == 1) { //length is not from the json, its the array length property from Javascript
+            runwayInfo = ("This station has 1 runway.<br/>");
+            runwayInfo = runwayInfo.concat(airInfo.runways[0].ident1+"-"+airInfo.runways[0].ident2+", "+ airInfo.runways[0].length_ft +" ft <br/>");
         } else {
-            rwyCount = airInfo.runways.length;
+            var rwyCount = airInfo.runways.length; 
             runwayInfo = ("This station has " + rwyCount + " runways.<br/>");
             for (var i = 0; i < rwyCount; i++){
                 runwayInfo = runwayInfo.concat(airInfo.runways[i].ident1+"-"+airInfo.runways[i].ident2+", "+ airInfo.runways[i].length_ft +" ft <br/>");
@@ -296,17 +309,17 @@ function middleware_Met (req, res, next) {
         //DIAGRAMS ==================
         var diagramAddress = "";
         var diagramHeader = "";
-        if (diagramsList.includes(req.params.airport)) {
-            diagramAddress = "/diagrams/" + req.params.airport +".png";
+        if (diagramsList.includes(airportCode)) { //basically diagramsList is a string containing every airport I have a diagram of.
+            diagramAddress = "/diagrams/" + airportCode +".png";
             diagramHeader = "<h3>AIRPORT DIAGRAM</h3>"
         } else {
             diagramAddress = "/diagrams/blank.png";
         }
 
         res.render ("index1", {
-            title : req.params.airport, 
+            title : airportCode, 
             metarMessage : 
-                "<h3>METAR Info</h3><p>Latest METAR from " + req.params.airport+", Transmitted at " +transTime +" zulu on "+ transDate + "<br/>"
+                "<h3>METAR Info</h3><p>Latest METAR from " + airportCode+", Transmitted at " +transTime +" zulu on "+ transDate + "<br/>"
                 +"requested at timestamp " + readings.meta.timestamp + "<br/></p>"
                 +"<h3>Visibility</h3><p>"+readings.visibility.value + " statute miles</p>"
                 +"<h3>Altimeter Setting</h3><p>" + readings.altimeter.value + " inches of mercury, Sea level preasure is 10"+ slp + " hPa.</p>"
@@ -328,16 +341,16 @@ function middleware_Met (req, res, next) {
 
     }).catch(function (error){ //in resolved state, the .thens will execute, if there is a throw anywhere, (request will throw on its own) .catch will execute. throw new Error; anywhere would do the same.
         if (error.error && error.error.includes("is not a valid ICAO")) {
-            res.render ("index1", {title : req.params.airport, metarMessage : "<h3>ERROR</h3><p>No METAR or TAF available from this station or station does not exist.</p>", diagramMessage : "/diagrams/blank.png"});
+            res.render ("index1", {title : airportCode, metarMessage : "<h3>ERROR</h3><p>No METAR or TAF available from this station or station does not exist.</p>", diagramMessage : "/diagrams/blank.png"});
         } else {
             next(error);
         }
     });
 };
 
-//res.send ("Latest METAR from " + req.params.airport+", at timestamp: " + readings.meta.timestamp + "(zulu)<br/>visibility: "+readings.visibility.value + " statute miles<br/>altimeter setting is " + readings.altimeter.value + " inches of mercury<br/>wind is blowing "+ splitMet[i][0]+ splitMet[i][1]+ splitMet[i][2] + " degrees at "+splitMet[i][3] + splitMet[i][4] + " knots gusting to " + splitMet[i][6] + splitMet[i][6] + " knots. <br/>" );
+//res.send ("Latest METAR from " + airportCode+", at timestamp: " + readings.meta.timestamp + "(zulu)<br/>visibility: "+readings.visibility.value + " statute miles<br/>altimeter setting is " + readings.altimeter.value + " inches of mercury<br/>wind is blowing "+ splitMet[i][0]+ splitMet[i][1]+ splitMet[i][2] + " degrees at "+splitMet[i][3] + splitMet[i][4] + " knots gusting to " + splitMet[i][6] + splitMet[i][6] + " knots. <br/>" );
 
-//res.render ("index1", {title : req.params.airport, metarMessage : "<h3>ERROR</h3><p>No METAR or TAF available from this station or station does not exist.</p>"});
+//res.render ("index1", {title : airportCode, metarMessage : "<h3>ERROR</h3><p>No METAR or TAF available from this station or station does not exist.</p>"});
 
 const port = process.argv[2] || 4000;
 app.listen(port, () => console.log(`Example app listening on port ${port}!`))
