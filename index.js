@@ -65,11 +65,12 @@ app.get("/metar/:airport", function(req, res, next) {
 function middleware_Met (req, res, next) {
 
     var airportCode = req.params.airport;
+    airportCode = airportCode.toUpperCase(); 
     if (diagramsList.includes("K"+airportCode)) {
         airportCode = "K"+airportCode;
     } else if (diagramsList.includes("C"+airportCode)){
         airportCode = "C"+airportCode;
-   } 
+    } 
 
 
     res.set('Authorization', '8Tt5zTsc8i8BzFmPD7oIcFVPewB17gPdLvquubKStjU');
