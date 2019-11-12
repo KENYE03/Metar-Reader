@@ -19,7 +19,7 @@ body {
     margin: 0;
 }
 
-#header-top-content {/*content stays centered*/
+#header-top-content {/*content stays centered, contains content in the upper header*/
     width: 1080px;
     margin: 0 auto;
     height: 70;
@@ -34,13 +34,13 @@ h1 {
     padding-top: 15px;
 }
 
-#header-bottom {/*carries the bottom-content*/
+#header-bottom {/*carries the bottom-content (nav bar)*/
     background: #333;
     padding: 0;
     margin: 0;
 }
 
-ul { /*This is acting as header-bottom-content*/
+ul { /*This is acting as header-bottom-content, contains content in the lower header */
     list-style-type: none;
     padding: 0;
     overflow: hidden;
@@ -212,8 +212,40 @@ p.home {
     color: black;
     font-weight:normal;
     font-style:normal;
-    margin-left:40;
     font-size: 20;
     text-align: center;
     margin: 4;
+}
+
+/*===============================================GUIDE SECTION============================================*/
+h2.guide {
+    font-family: 'Montserrat', sans-serif;
+    font-weight:bold;
+    font-style:normal;
+    color: black;
+    text-transform: uppercase;
+    margin-left:20;
+    font-size: 30px;
+}
+
+p.fixed {
+    font-family: 'Roboto Mono', sans-serif;
+    color: black;
+    margin: 0 auto;
+    text-align: center;
+    border: 5px solid #C0C0C0;
+    padding: 10px;
+    font-size: 20;
+    text-transform: uppercase;
+    width: 800px;
+}
+
+h3.guide {
+    font-family: 'Roboto Mono', sans-serif;
+    font-weight:bold;
+    font-style:normal;
+    color: black;
+    text-transform: uppercase;
+    margin-left:20;
+    margin-top: 40;
 }

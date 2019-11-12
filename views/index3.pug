@@ -1,0 +1,84 @@
+﻿//GUIDE PAGE
+html
+head
+    title= title 
+    link(rel='stylesheet', href='https://fonts.googleapis.com/css?family=Montserrat|Roboto+Mono|Roboto')
+    style
+        include style.css
+body
+    #header-top
+        #header-top-content
+            h1 METAR READER
+    
+    .sticky
+        #header-bottom
+            ul
+                -var airport = '';
+                input(type="text" id="icao" maxlength=4 placeholder="Enter an ICAO code" onchange="airport = document.getElementById('icao').value;")
+                input( type='button' value="GO ➔" id="goIcao" onclick="location.replace('/metar/'+airport);")
+                script.  
+                    var box1 = document.getElementById("icao");
+                    box1.addEventListener("keyup", function(event) {
+                        if (event.keyCode === 13 && box1 === document.activeElement ) {
+                            event.preventDefault();
+                            location.replace('/metar/'+airport);
+                        }
+                    });
+                li
+                    a(href='/') HOME
+                li
+                    a(href='/howto') GUIDE
+
+    #mainpage
+    
+        
+        h2.guide HOW TO DECODE A METAR
+        p Here is an example of a North American METAR:
+        p.fixed METAR CYOW 110400Z 34008G15KT 15SM -FZRN FEW022 OVC060 03/M01 A3008 RMK SLP194=
+        p Going through piece by piece:
+        h3.guide METAR
+        p This identifies that the radio signal is a METAR, or Meteorological Terminal Aviation Routine Weather Report.
+        h3.guide CYOW
+        p This identifies the 4-letter code of the station or airport that transmitted the report.
+        p Airport codes are designated by ICAO (International Civil Aviation Authority).
+        p This code is for the Ottawa Macdonald–Cartier International Airport in Ottawa, Canada.
+        h3.guide 110400Z
+        p Timestamp in UTC. the first two numbers represent the date of transmission (the 11th of that month). 
+        p 0400 means it was transmitted at 04:40 in 24-hours time.
+        p The 'Z' conveys that the time is givin in ZULU, or aviation speak for UTC.
+        p This identifies that the radio signal is a METAR, or Meteorological Terminal Aviation Routine Weather Report.
+        h3.guide 34008G15KT
+        p Wind information section. First three numbers represent wind dirrection, in this case 340 degrees true.
+        p Next section represents wind speed, with the 'KT' meaning knots. The first two numbers represent normal wind speed, while the numbers aftern the G represent gusts.
+        p In this case, the wind is 8 knots gusting to 15 knots.
+        h3.guide 15SM
+        p States the visbility at ground level in statute miles. In this case the visibility is 15 miles.
+        h3.guide -FZRN
+        p This section shows predominant weather. Weather is represented by two or four letter long codes.
+        p In this case, 'RN' means rain, 'FZ' is a qualifeir meaning freezing, so the predominant weather is freezing rain.
+        p The '-' symbol tells pilots that the weather is light, while '+' would mean heavy.
+        p Here is a table of common weather codes:
+        img(src="/diagrams/MetCodes.PNG" , alt='Table not found.') 
+        h3.guide FEW022 OVC060
+        p This sections shows cloud cover.
+        p There are 5 levels of cloud cover: Clear sky(SKC or CLR), scattered (SCT), broken(BKN), and overcast (OVC).
+        p Cloud cover varries by altitude, so the last three numbers state cloud cover altitude in units of 100 feet.
+        p So at this airport, there are few clouds at 2200 ft, while it is overcast at 6000 ft.  
+        h3.guide 03/M01
+        p This is the tempreture reading. The first section before the slash is the current tempreture in degrees celcius.
+        p The second number represents the current dewpoint. The 'M' before the number signifies that the readings are below 0.
+        p In this case, the tempreture is 3°C, while the dewpoint is -1°C.
+        h3.guide A3008
+        p This number shows the recommended altimeter calibration setting in inches of mercury.
+        p In this case, altimeters should be set to 30.08 "Hg.
+        h3.guide RMK SLP194=
+        p This section is for extra remarks.
+        p In this case, the remark is that the pressure at sea level (SLP) is 194 hPa (even).
+
+
+
+
+
+
+
+        
