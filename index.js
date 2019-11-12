@@ -16,7 +16,6 @@ function numberToMonth (n) {
         return ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul","Aug", "Sep", "Oct", "Nov", "Dec"][parseInt(n, 10) - 1];
 }
 
-
 function cloudDecode (code) {
     if (code == "CLR") { //CLR and SKC means that there are no clouds
         return "CLR"
