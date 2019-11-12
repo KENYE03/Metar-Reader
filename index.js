@@ -1,5 +1,5 @@
-const express = require ("express");
-const request = require ("request-promise-native");
+const express = require ("express"); //web framework. Handles routing, req res middleware, etc.
+const request = require ("request-promise-native"); //handles the web requests, callbacks, or in this case promises.
 const fs = require ("fs");
 const path = require ("path");
 const app = new express();
@@ -42,18 +42,12 @@ var diagramsList = "CYKF CYOW CYUL CYVR CYYC CYYZ KATL KAUS KBNA KBOS KBWI KCTL 
  
 app.get("/", middleware2);//if needed, multiple middleware functions can be put in one app.get, but only one res of course
 function middleware2 (req, res, next) { //please keep in mind that a function name is not needed, also => may be used instead
-    res.render ("index2", {homeMessage : "Welcome to the Metar reader!" 
-        +"<br/> To start, type in a 4-letter ICAO code of any airport in the US or Canada."
-        +"<br/>METARs are regular aviatioin weather reports issued regularly airports and weather stations."
-        +"<br/>They are valid for one hour only."
-        +"<br/>TAFs are longer reports with specific validity periods raging from 20 minuties to 30 hours."
-        +"<br/>They report on specific weather conditions expected to affect the landing and takeoff of aircraft."
-        +"<br/><br/>All altitues are given in AGL, all degrees are in degrees true" });
+    res.render ("index2");
 }
 
 app.get("/howto", middleware3);
 function middleware3 (req, res, next) {
-    res.render ("index2", {homeMessage : "something on how to read a Metar and Taf" });
+    res.render ("index3");
 }
 
 
@@ -65,11 +59,12 @@ app.get("/metar/:airport", function(req, res, next) {
 function middleware_Met (req, res, next) {
 
     var airportCode = req.params.airport;
+    airportCode = airportCode.toUpperCase(); 
     if (diagramsList.includes("K"+airportCode)) {
         airportCode = "K"+airportCode;
     } else if (diagramsList.includes("C"+airportCode)){
         airportCode = "C"+airportCode;
-   } 
+    } 
 
 
     res.set('Authorization', '8Tt5zTsc8i8BzFmPD7oIcFVPewB17gPdLvquubKStjU');
@@ -327,7 +322,7 @@ function middleware_Met (req, res, next) {
                 +"<h3>Tempreture</h3><p>Currently "+readings.temperature.value+"°C, dewpoint at "+readings.dewpoint.value+"°C.</p>",
             cloudMessage : "<h3>Cloud Cover</h3><p>"+clouds+"</p>", 
             weatherMessage : "<h3>Predominant Weather</h3><p>"+preWeather+"</p>", 
-            tafMessage : "<h3>TAF</h3><p>"+tafReport+"</p>", //no idea how im going to deal with this  
+            tafMessage : "<h3>TAF</h3><p>"+tafReport+"</p>", 
             infoMessage : 
                 "<h3>Station Information</h3><p>"
                 + airInfo.name + "<br/>" + city + locInfo.countryName + "<br/>"
@@ -343,7 +338,8 @@ function middleware_Met (req, res, next) {
         if (error.error && error.error.includes("is not a valid ICAO")) {
             res.render ("index1", {title : airportCode, metarMessage : "<h3>ERROR</h3><p>No METAR or TAF available from this station or station does not exist.</p>", diagramMessage : "/diagrams/blank.png"});
         } else {
-            next(error);
+            //next(error);
+            res.render ("index1", {title : airportCode, metarMessage : "<h3>ERROR</h3><p>Station does not provide TAF transmissions.</p>", diagramMessage : "/diagrams/blank.png"});
         }
     });
 };
