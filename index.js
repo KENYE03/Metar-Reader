@@ -343,10 +343,6 @@ function middleware_Met (req, res, next) {
     });
 };
 
-//res.send ("Latest METAR from " + airportCode+", at timestamp: " + readings.meta.timestamp + "(zulu)<br/>visibility: "+readings.visibility.value + " statute miles<br/>altimeter setting is " + readings.altimeter.value + " inches of mercury<br/>wind is blowing "+ splitMet[i][0]+ splitMet[i][1]+ splitMet[i][2] + " degrees at "+splitMet[i][3] + splitMet[i][4] + " knots gusting to " + splitMet[i][6] + splitMet[i][6] + " knots. <br/>" );
-
-//res.render ("index1", {title : airportCode, metarMessage : "<h3>ERROR</h3><p>No METAR or TAF available from this station or station does not exist.</p>"});
-
 const port = process.argv[2] || 4000;
 app.listen(port, () => console.log(`Example app listening on port ${port}!`))
 
@@ -361,3 +357,4 @@ app.listen(port, () => console.log(`Example app listening on port ${port}!`))
 // Promise.all([promise1, promise2, promise3]).then(function(results) {
 //     results[0];
 // })
+//
