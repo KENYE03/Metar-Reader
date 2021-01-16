@@ -231,8 +231,9 @@ function middleware_Met (req, res, next) {
                 }
 
             }
+            var slp = "";
             if (splitMet[i].includes("SLP")){//finding the remarks
-                var slp = (""+splitMet[i][3]+splitMet[i][4]+"."+splitMet[i][5]+"");
+                slp = (", Sea level preasure is 10" +splitMet[i][3]+splitMet[i][4]+"."+splitMet[i][5]+"hPa");
             }
         }
         //=============================================================================================================================================TAF STUFF=============
@@ -316,7 +317,7 @@ function middleware_Met (req, res, next) {
                 "<h3>METAR Info</h3><p>Latest METAR from " + airportCode+", Transmitted at " +transTime +" zulu on "+ transDate + "<br/>"
                 +"requested at timestamp " + readings.meta.timestamp + "<br/></p>"
                 +"<h3>Visibility</h3><p>"+readings.visibility.value + " statute miles</p>"
-                +"<h3>Altimeter Setting</h3><p>" + readings.altimeter.value + " inches of mercury, Sea level preasure is 10"+ slp + " hPa.</p>"
+                +"<h3>Altimeter Setting</h3><p>" + readings.altimeter.value + " inches of mercury" + slp + ".</p>"
                 +"<h3>Wind</h3><p>"+ windDir + " at "+ windSpeed + " knots"+windVar+".</p>"
                 +"<h3>Tempreture</h3><p>Currently "+readings.temperature.value+"°C, dewpoint at "+readings.dewpoint.value+"°C.</p>",
             cloudMessage : "<h3>Cloud Cover</h3><p>"+clouds+"</p>", 
@@ -344,7 +345,7 @@ function middleware_Met (req, res, next) {
 };
 
 const port = process.argv[2] || 4000;
-app.listen(port, () => console.log(`Example app listening on port ${port}!`))
+app.listen(port, () => console.log(`App listening on port ${port}!`))
 
 
 // fetch(url).then(function(value) {
