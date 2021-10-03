@@ -2,6 +2,7 @@ const express = require ("express"); //web framework. Handles routing, req res m
 const request = require ("request-promise-native"); //handles the web requests, callbacks, or in this case promises.
 const fs = require ("fs");
 const path = require ("path");
+const e = require("express");
 const app = new express();
 app.set("view engine", "pug");
 
@@ -10,6 +11,12 @@ app.use(express.static(path.join(__dirname, 'views')));
 //AVWX REST API get Auth token set up before Nov. 1
 //get "the station has # runways" s fixed and TAF fixed for remote airports like CYKP
 //swtiched from city name based loccation info to coordinate based info, switched from apixu api to GeoNames api
+
+const preWeatherMap = new Map();
+const discWeatherMap = new Map();
+const midWeatherMap = new Map();
+const postWeatherMap = new Map();
+
 
 
 function numberToMonth (n) {
@@ -91,7 +98,7 @@ function middleware_Met (req, res, next) {
         locInfo = JSON.parse (city_body);
         //everytjomg from the previous request-promises is now in scope
 
-        //===========================================================================================================================================METAR STUFF=============
+        //METAR STUFF========================================================================================================================================================
         //===================================================================================================================================================================
 
         var transDate = (readings.time.dt.substr(0, 4) +"-"+ numberToMonth(readings.time.dt.substr(5, 2)) +"-"+ readings.time.dt.substr(8, 2)); 
@@ -119,94 +126,75 @@ function middleware_Met (req, res, next) {
             //=============PREDOMINANT WEATHER=============
             if (splitMet[i].includes("SM")){//using visibility section to find where the cloud and predominant weather section are
                 i++;
-                var preWeather = ""
+                var predomWeather = ""
                 
                 if (splitMet[i].includes ("0") == false && splitMet[i].includes("CLR") == false && splitMet[i].includes("SKC") == false) {//looking for predominant weather by stopping before clouds (which will always include either 0, CLR or SKC)
-                    preWeather = "Current predominant weather includes:<br/>";
+                    predomWeather = "Current predominant weather includes:<br/>";
                 }
                 
+                preWeatherMap.set("+", "heavy ");
+                preWeatherMap.set("-", "light ");
+
+                discWeatherMap.set("DR", "drifting ");
+                discWeatherMap.set("FZ", "freezing ");
+                discWeatherMap.set("BL", "blowing ");
+                discWeatherMap.set("TI", "thin ");
+                discWeatherMap.set("VC", "nearby ");
+                discWeatherMap.set("SH", "showers<br/> ");
+                discWeatherMap.set("TS", "thunderstorms<br/> ");
+                discWeatherMap.set("BC", "patches<br/> ");
+
+                midWeatherMap.set("RA", "rain<br/> ");
+                midWeatherMap.set("DZ", "drizzle<br/> ");
+                midWeatherMap.set("SG", "snow grains<br/> ");
+                midWeatherMap.set("GR", "hail<br/> ");
+                midWeatherMap.set("GS", "snow pellets<br/> ");
+                midWeatherMap.set("UP", "unknown precepitation<br/> ");
+                midWeatherMap.set("PL", "ice pellets<br/> ");
+                midWeatherMap.set("SN", "snow<br/> ");
+
+                postWeatherMap.set("HZ", "haze<br/> ");
+                postWeatherMap.set("FU", "smoke<br/> ");
+                postWeatherMap.set("SA", "sand<br/> ");
+                postWeatherMap.set("FG", "fog with visbility less than 5 octas<br/> ");
+                postWeatherMap.set("BR", "mist with visbility greater than 5 octas<br/> ");
+                postWeatherMap.set("DU", "dust<br/> ");
+                postWeatherMap.set("VA", "volcanic ash<br/> ");
+                postWeatherMap.set("FC", "funnel clouds with possibilities of tornados<br/> ");
+                postWeatherMap.set("SS", "sand storms<br/> ");
+                postWeatherMap.set("PO", "dust devils<br/> ");
+                postWeatherMap.set("SQ", "squalls<br/> ");
+                postWeatherMap.set("DS", "dust storms<br/> ");
+
+
                 for(;splitMet[i].includes("0") == false  && splitMet[i].includes("CLR") == false && splitMet[i].includes("SKC") == false;i++) { // if any of these are true, that means we are on the cloud section now, and there is no predominant weather section
-                    if (splitMet[i].includes ("+")) {
-                        preWeather = preWeather.concat("heavy ");
+                    var target = splitMet[i];
+                    var charCounter = 0;
+                    
+                    if (preWeatherMap.has(target[charCounter])) {
+                        predomWeather = predomWeather.concat(preWeatherMap.get(target[charCounter]));
+                        charCounter++;
                     }
-                    if (splitMet[i].includes ("-")) {
-                        preWeather = preWeather.concat("light ");
+
+                    if (discWeatherMap.has(target.substr(charCounter, 2))) {
+                        predomWeather = predomWeather.concat(discWeatherMap.get(target.substr(charCounter, 2)));
+                        charCounter+=2;
                     }
-                    if (splitMet[i].includes ("DR")) {
-                        preWeather = preWeather.concat("drifting ");
+
+                    if (midWeatherMap.has(target.substr(charCounter, 2))) {
+                        predomWeather = predomWeather.concat(midWeatherMap.get(target.substr(charCounter, 2)));
+                        charCounter+=2;
                     }
-                    if (splitMet[i].includes ("FZ")) {
-                        preWeather = preWeather.concat("freezing ");
+
+                    if (postWeatherMap.has(target.substr(charCounter, 2))) {
+                        predomWeather = predomWeather.concat(postWeatherMap.get(target.substr(charCounter, 2)));
+                        charCounter+=2;
                     }
-                    if (splitMet[i].includes ("BL")) {
-                        preWeather = preWeather.concat("blowing ");
-                    }
-                    if (splitMet[i].includes ("TI")) {
-                        preWeather = preWeather.concat("thin ");
-                    }
-                    if (splitMet[i].includes ("VC")) {
-                        preWeather = preWeather.concat("nearby ");
-                    }
-                    if (splitMet[i].includes ("SH")) {
-                        preWeather = preWeather.concat("showers<br/> ");
-                    }
-                    if (splitMet[i].includes ("TS")) {
-                        preWeather = preWeather.concat("thunderstorms<br/> ");
-                    }
-                    if (splitMet[i].includes ("BC")) {
-                        preWeather = preWeather.concat("patches<br/> ");
-                    }
-                    if (splitMet[i].includes ("RA")) {
-                        preWeather = preWeather.concat("rain<br/> ");
-                    }
-                    if (splitMet[i].includes ("DZ")) {
-                        preWeather = preWeather.concat("drizzle<br/> ");
-                    }
-                    if (splitMet[i].includes ("SG")) {
-                        preWeather = preWeather.concat("snow grains<br/> ");
-                    }
-                    if (splitMet[i].includes ("GR")) {
-                        preWeather = preWeather.concat("hail<br/> ");
-                    }
-                    if (splitMet[i].includes ("PL")) {
-                        preWeather = preWeather.concat("ice pellets<br/> ");
-                    }
-                    if (splitMet[i].includes ("HZ")) {
-                        preWeather = preWeather.concat("haze<br/> ");
-                    }
-                    if (splitMet[i].includes ("FU")) {
-                        preWeather = preWeather.concat("smoke<br/> ");
-                    }
-                    if (splitMet[i].includes ("SA")) {
-                        preWeather = preWeather.concat("sand<br/> ");
-                    }
-                    if (splitMet[i].includes ("FG")) {
-                        preWeather = preWeather.concat("fog with visbility less than 5 octas<br/> ");
-                    }
-                    if (splitMet[i].includes ("BR")) {
-                        preWeather = preWeather.concat("mist with visbility greater than 5 octas<br/> ");
-                    }
-                    if (splitMet[i].includes ("DU")) {
-                        preWeather = preWeather.concat("dust<br/> ");
-                    }
-                    if (splitMet[i].includes ("VA")) {
-                        preWeather = preWeather.concat("volcanic ash<br/> ");
-                    }
-                    if (splitMet[i].includes ("FC")) {
-                        preWeather = preWeather.concat("funnel clouds with possibilities of tornados<br/> ");
-                    }
-                    if (splitMet[i].includes ("SS")) {
-                        preWeather = preWeather.concat("sand storms<br/> ");
-                    }
-                    if (splitMet[i].includes ("PO")) {
-                        preWeather = preWeather.concat("dust devils<br/> ");
-                    }
-                    if (splitMet[i].includes ("SQ")) {
-                        preWeather = preWeather.concat("squalls<br/> ");
-                    }
-                    if (splitMet[i].includes ("DS")) {
-                        preWeather = preWeather.concat("dust storms<br/> ");
-                    }
+
+                }
+
+                if (predomWeather == "") { //removing the weather section if there is no weather/
+                    predomWeather = "Currently no predominant weather.<br/>";
                 }
                 
                 //=============CLOUDS=============
@@ -225,18 +213,16 @@ function middleware_Met (req, res, next) {
                     clouds = "Skies are currently clear of clouds.<br/>";
                 }
 
-                
-                if (preWeather == "") { //removing the weather section if there is no weather/
-                    preWeather = "Currently no predominant weather.<br/>";
-                }
 
             }
+
+            //=============SEA LEVEL PREASSURE=============
             var slp = "";
             if (splitMet[i].includes("SLP")){//finding the remarks
                 slp = (", Sea level preasure is 10" +splitMet[i][3]+splitMet[i][4]+"."+splitMet[i][5]+"hPa");
             }
         }
-        //=============================================================================================================================================TAF STUFF=============
+        //TAF STUFF==========================================================================================================================================================
         //===================================================================================================================================================================
         var reportCount = 0;
         var tafReport = "";
@@ -269,7 +255,7 @@ function middleware_Met (req, res, next) {
                 tafReport = tafReport.concat("Next report at " + tafReadings.remarks[k-5] + tafReadings.remarks[k-4] + tafReadings.remarks[k-3] + tafReadings.remarks[k-2] + " hours zulu");
             } 
         }
-        //====================================================================================================================================STATION INFO STUFF=============
+        //STATION INFO STUFF=================================================================================================================================================
         //===================================================================================================================================================================
         
 
@@ -321,7 +307,7 @@ function middleware_Met (req, res, next) {
                 +"<h3>Wind</h3><p>"+ windDir + " at "+ windSpeed + " knots"+windVar+".</p>"
                 +"<h3>Tempreture</h3><p>Currently "+readings.temperature.value+"°C, dewpoint at "+readings.dewpoint.value+"°C.</p>",
             cloudMessage : "<h3>Cloud Cover</h3><p>"+clouds+"</p>", 
-            weatherMessage : "<h3>Predominant Weather</h3><p>"+preWeather+"</p>", 
+            weatherMessage : "<h3>Predominant Weather</h3><p>"+predomWeather+"</p>", 
             tafMessage : "<h3>TAF</h3><p>"+tafReport+"</p>", 
             infoMessage : 
                 "<h3>Station Information</h3><p>"
