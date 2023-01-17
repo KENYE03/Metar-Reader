@@ -17,3 +17,4 @@ This web-based implementation of a METAR and TAF decoder, taking an ICAO airport
 * Additional AIR-SIGMET information.
 * Decoder for aribitrary METAR input, not just for specific ICAO codes.
 * IATA code support along with ICAO codes.
+* Replace pug templating engine with EJS.
